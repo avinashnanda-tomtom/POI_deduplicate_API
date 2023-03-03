@@ -8,72 +8,8 @@ import ray.util.multiprocessing as ray
 from tqdm.auto import tqdm
 import warnings
 warnings.filterwarnings("ignore")
+np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)  
 
-
-
-def create_edit_features_em_apply(df_pairs):
-
-
-    df_pairs = add_lat_lon_distance_features(df_pairs)
-
-    df_pairs["direction1"] = df_pairs["sourceNames1"].apply(extract_directions)
-    df_pairs["direction2"] = df_pairs["sourceNames2"].apply(extract_directions)
-    df_pairs['Is_direction_match'] = df_pairs.apply(lambda x: is_direction_match(x.direction1, x.direction2), axis=1)
-
-    df_pairs["name1_number"] = df_pairs["sourceNames1"].str.extract('(\d+)')
-    df_pairs["name2_number"] = df_pairs["sourceNames2"].str.extract('(\d+)')
-    df_pairs['Is_name_number_match'] = df_pairs.apply(lambda x: name_number_match(x.name1_number, x.name2_number), axis=1)
-    
-    df_pairs['Is_related_cat'] = df_pairs.apply(lambda x: is_related_cat(x.category1, x.category2), axis=1)
-    df_pairs['Is_category_match'] = df_pairs.apply(lambda x: category_match(x.category1, x.category2), axis=1)
-    df_pairs['Is_subcategory_match'] =  df_pairs.apply(lambda x: sub_category_match(x.subCategory1, x.subCategory2), axis=1)
-
-
-    df_pairs['Is_brand_match'] = df_pairs.apply(lambda x: brand_match(x.brands1, x.brands2), axis=1)
-    df_pairs['Is_house_match'] = df_pairs.apply(lambda x: house_match(x.houseNumber1, x.houseNumber2), axis=1)
-    df_pairs['Is_postal_match'] = df_pairs.apply(lambda x: house_match(x.postalCode1, x.postalCode2), axis=1)
-    df_pairs['is_phone_match'] = df_pairs.apply(lambda x: phone_category(x.phoneNumbers1, x.phoneNumbers2), axis=1)
-    
-    
-    df_pairs['Is_email_match'] = df_pairs.apply(lambda x: email_url_match(x.email1, x.email2), axis=1)
-    df_pairs['Is_url_match'] = df_pairs.apply(lambda x: email_url_match(x.internet1, x.internet2), axis=1)
-
-    df_pairs['name_davies'] = df_pairs.apply(lambda x: davies(x.sourceNames1, x.sourceNames2), axis=1)
-    df_pairs['name_leven'] = df_pairs.apply(lambda x: leven(x.sourceNames1, x.sourceNames2), axis=1)
-    df_pairs['name_dice'] = df_pairs.apply(lambda x: strike_a_match(x.sourceNames1, x.sourceNames2), axis=1)
-    df_pairs['name_jaro'] = df_pairs.apply(lambda x: jaro(x.sourceNames1, x.sourceNames2), axis=1)
-    df_pairs['name_set_ratio'] = df_pairs.apply(lambda x: token_set_ratio(x.sourceNames1, x.sourceNames2), axis=1)
-    
-    df_pairs['street_davies'] =  df_pairs.apply(lambda x: davies(x.streets1, x.streets2), axis=1)
-    df_pairs['street_leven'] =  df_pairs.apply(lambda x: leven(x.streets1, x.streets2), axis=1)
-    df_pairs['street_jaro'] =  df_pairs.apply(lambda x: jaro(x.streets1, x.streets2), axis=1)
-
-    df_pairs['email_davies'] =  df_pairs.apply(lambda x: davies(x.email1, x.email2), axis=1)
-    df_pairs['email_leven'] =  df_pairs.apply(lambda x: leven(x.email1, x.email2), axis=1)
-    df_pairs['email_jaro'] =  df_pairs.apply(lambda x: jaro(x.email1, x.email2), axis=1)
-
-    df_pairs['url_davies'] =  df_pairs.apply(lambda x: davies(x.internet1, x.internet2), axis=1)
-    df_pairs['url_leven'] = df_pairs.apply(lambda x: leven(x.internet1, x.internet2), axis=1)
-    df_pairs['url_jaro'] =  df_pairs.apply(lambda x: jaro(x.internet1, x.internet2), axis=1)
-    
-    
-    df_pairs['brands_davies'] =  df_pairs.apply(lambda x: davies(x.brands1, x.brands2), axis=1)
-    df_pairs['brand_leven'] = df_pairs.apply(lambda x: leven(x.brands1, x.brands2), axis=1)
-    df_pairs['brand_jaro'] =  df_pairs.apply(lambda x: jaro(x.brands1, x.brands2), axis=1)
-
-
-    df_pairs['phone_lcs'] = df_pairs.apply(lambda x: phone_lcs(x.phoneNumbers1, x.phoneNumbers2), axis=1)
-    
-        
-    df_pairs['subcat_WRatio'] = df_pairs.apply(lambda x: WRatio(x.subCategory1, x.subCategory2), axis=1)
-    df_pairs['subcat_ratio'] = df_pairs.apply(lambda x: ratio(x.subCategory1, x.subCategory2), axis=1)
-    df_pairs['subcat_token_set_ratio'] = df_pairs.apply(lambda x: token_set_ratio(x.subCategory1, x.subCategory2), axis=1)
-    
-    
-    drop_column = ['direction1','direction2', 'name1_number', 'name2_number']
-    df_pairs.drop(drop_column, axis=1, inplace = True)
-
-    return df_pairs
 
 
 def create_edit_features_em(df_pairs):
@@ -81,52 +17,53 @@ def create_edit_features_em(df_pairs):
 
     df_pairs = add_lat_lon_distance_features(df_pairs)
 
-    df_pairs["direction1"] = df_pairs["sourceNames1"].apply(extract_directions)
-    df_pairs["direction2"] = df_pairs["sourceNames2"].apply(extract_directions)
-    df_pairs['Is_direction_match'] = df_pairs.apply(lambda x: is_direction_match(x.direction1, x.direction2), axis=1)
+    df_pairs["direction1"] = df_pairs["sourceNames1"].map(extract_directions)
+    df_pairs["direction2"] = df_pairs["sourceNames2"].map(extract_directions)
+    df_pairs['Is_direction_match'] = list(map(is_direction_match, df_pairs['direction1'], df_pairs['direction2']))
 
     df_pairs["name1_number"] = df_pairs["sourceNames1"].str.extract('(\d+)')
     df_pairs["name2_number"] = df_pairs["sourceNames2"].str.extract('(\d+)')
-    df_pairs['Is_name_number_match'] = df_pairs.apply(lambda x: name_number_match(x.name1_number, x.name2_number), axis=1)
+    df_pairs['Is_name_number_match'] = list(map(name_number_match, df_pairs['name1_number'], df_pairs['name2_number']))
+    
+    df_pairs['Is_related_cat'] = list(map(is_related_cat, df_pairs['category1'], df_pairs['category2']))
+    df_pairs['Is_category_match'] = list(map(category_match, df_pairs['category1'], df_pairs['category2']))
+    df_pairs['Is_subcategory_match'] =  list(map(sub_category_match, df_pairs['subCategory1'], df_pairs['subCategory2']))
 
-    df_pairs['Is_related_cat'] = np.vectorize(is_related_cat)(list(df_pairs["category1"]),list(df_pairs["category2"]))
-    df_pairs['Is_category_match'] = np.vectorize(category_match)(list(df_pairs["category1"]),list(df_pairs["category2"]))
-    df_pairs['Is_subcategory_match'] =  np.vectorize(sub_category_match)(list(df_pairs["subCategory1"]),list(df_pairs["subCategory2"]))
+    df_pairs['Is_brand_match'] =list(map(brand_match, df_pairs['brands1'], df_pairs['brands2']))
+    df_pairs['Is_house_match'] = list(map(house_match, df_pairs['houseNumber1'], df_pairs['houseNumber2']))
+    df_pairs['Is_postal_match'] = list(map(house_match, df_pairs['postalCode1'], df_pairs['postalCode2']))
+    
+    df_pairs['is_phone_match'] = list(map(phone_category, df_pairs['phoneNumbers1'], df_pairs['phoneNumbers2']))
+    df_pairs['Is_email_match'] = list(map(email_url_match, df_pairs['email1'], df_pairs['email2']))
+    df_pairs['Is_url_match'] =  list(map(email_url_match, df_pairs['internet1'], df_pairs['internet2']))
 
-    df_pairs['Is_brand_match'] = np.vectorize(brand_match)(list(df_pairs["brands1"]),list(df_pairs["brands2"]))
-    df_pairs['Is_house_match'] = np.vectorize(house_match)(list(df_pairs["houseNumber1"]),list(df_pairs["houseNumber2"]))
-    df_pairs['Is_postal_match'] = np.vectorize(house_match)(list(df_pairs["postalCode1"]),list(df_pairs["postalCode2"]))
-    df_pairs['is_phone_match'] = df_pairs.apply(lambda x: phone_category(x.phoneNumbers1, x.phoneNumbers2), axis=1)
+    df_pairs['name_davies'] = list(map(davies, df_pairs['sourceNames1'], df_pairs['sourceNames2']))
+    df_pairs['name_leven'] = list(map(leven, df_pairs['sourceNames1'], df_pairs['sourceNames2']))
+    df_pairs['name_dice'] = list(map(strike_a_match, df_pairs['sourceNames1'], df_pairs['sourceNames2']))
+    df_pairs['name_jaro'] = list(map(jaro, df_pairs['sourceNames1'], df_pairs['sourceNames2']))
+    df_pairs['name_set_ratio'] = list(map(token_set_ratio, df_pairs['sourceNames1'], df_pairs['sourceNames2']))
 
-    df_pairs['Is_email_match'] = np.vectorize(email_url_match)(list(df_pairs["email1"]),list(df_pairs["email2"]))
-    df_pairs['Is_url_match'] = np.vectorize(email_url_match)(list(df_pairs["internet1"]),list(df_pairs["internet2"]))
+    df_pairs['street_davies'] = list(map(davies, df_pairs['streets1'], df_pairs['streets2']))
+    df_pairs['street_leven'] = list(map(leven, df_pairs['streets1'], df_pairs['streets2']))
+    df_pairs['street_jaro'] = list(map(jaro, df_pairs['streets1'], df_pairs['streets2']))
+    
+    df_pairs['email_davies'] = list(map(davies, df_pairs['email1'], df_pairs['email2']))
+    df_pairs['email_leven'] = list(map(leven, df_pairs['email1'], df_pairs['email2']))
+    df_pairs['email_jaro'] = list(map(jaro, df_pairs['email1'], df_pairs['email2']))
+    
 
-    df_pairs['name_davies'] = np.vectorize(davies)(list(df_pairs["sourceNames1"]),list(df_pairs["sourceNames2"]))
-    df_pairs['name_leven'] = np.vectorize(leven)(list(df_pairs["sourceNames1"]),list(df_pairs["sourceNames2"]))
-    df_pairs['name_dice'] = np.vectorize(strike_a_match)(list(df_pairs["sourceNames1"]),list(df_pairs["sourceNames2"]))
-    df_pairs['name_jaro'] = np.vectorize(jaro)(list(df_pairs["sourceNames1"]),list(df_pairs["sourceNames2"]))
-    df_pairs['name_set_ratio'] = np.vectorize(token_set_ratio)(list(df_pairs["sourceNames1"]),list(df_pairs["sourceNames2"]))
+    df_pairs['url_davies'] = list(map(davies, df_pairs['internet1'], df_pairs['internet2']))
+    df_pairs['url_leven'] = list(map(leven, df_pairs['internet1'], df_pairs['internet2']))
+    df_pairs['url_jaro'] = list(map(jaro, df_pairs['internet1'], df_pairs['internet2']))
 
-    df_pairs['street_davies'] = np.vectorize(davies)(list(df_pairs["streets1"]),list(df_pairs["streets2"]))
-    df_pairs['street_leven'] = np.vectorize(leven)(list(df_pairs["streets1"]),list(df_pairs["streets2"]))
-    df_pairs['street_jaro'] = np.vectorize(jaro)(list(df_pairs["streets1"]),list(df_pairs["streets2"]))
+    df_pairs['brands_davies'] = list(map(davies, df_pairs['brands1'], df_pairs['brands2']))
+    df_pairs['brand_leven'] = list(map(leven, df_pairs['brands1'], df_pairs['brands2']))
+    df_pairs['brand_jaro'] = list(map(jaro, df_pairs['brands1'], df_pairs['brands2']))
 
-    df_pairs['email_davies'] = np.vectorize(davies)(list(df_pairs["email1"]),list(df_pairs["email2"]))
-    df_pairs['email_leven'] = np.vectorize(leven)(list(df_pairs["email1"]),list(df_pairs["email2"]))
-    df_pairs['email_jaro'] = np.vectorize(jaro)(list(df_pairs["email1"]),list(df_pairs["email2"]))
-
-    df_pairs['url_davies'] = np.vectorize(davies)(list(df_pairs["internet1"]),list(df_pairs["internet2"]))
-    df_pairs['url_leven'] = np.vectorize(leven)(list(df_pairs["internet1"]),list(df_pairs["internet2"]))
-    df_pairs['url_jaro'] = np.vectorize(jaro)(list(df_pairs["internet1"]),list(df_pairs["internet2"]))
-
-    df_pairs['brands_davies'] = np.vectorize(davies)(list(df_pairs["brands1"]),list(df_pairs["brands2"]))
-    df_pairs['brand_leven'] = np.vectorize(leven)(list(df_pairs["brands1"]),list(df_pairs["brands2"]))
-    df_pairs['brand_jaro'] = np.vectorize(jaro)(list(df_pairs["brands1"]),list(df_pairs["brands2"]))
-
-    df_pairs['phone_lcs'] = df_pairs.apply(lambda x: phone_lcs(x.phoneNumbers1, x.phoneNumbers2), axis=1)
-    df_pairs['subcat_WRatio'] = np.vectorize(WRatio)(list(df_pairs["subCategory1"]),list(df_pairs["subCategory2"]))
-    df_pairs['subcat_ratio'] = np.vectorize(ratio)(list(df_pairs["subCategory1"]),list(df_pairs["subCategory2"]))
-    df_pairs['subcat_token_set_ratio'] = np.vectorize(token_set_ratio)(list(df_pairs["subCategory1"]),list(df_pairs["subCategory2"]))
+    df_pairs['phone_lcs'] = list(map(phone_lcs, df_pairs['phoneNumbers1'], df_pairs['phoneNumbers2']))
+    df_pairs['subcat_WRatio'] = list(map(WRatio, df_pairs['subCategory1'], df_pairs['subCategory2']))
+    df_pairs['subcat_ratio'] = list(map(ratio, df_pairs['subCategory1'], df_pairs['subCategory2']))
+    df_pairs['subcat_token_set_ratio'] = list(map(token_set_ratio, df_pairs['subCategory1'], df_pairs['subCategory2']))
     
     drop_column = ['direction1','direction2', 'name1_number', 'name2_number']
     df_pairs.drop(drop_column, axis=1, inplace = True)
