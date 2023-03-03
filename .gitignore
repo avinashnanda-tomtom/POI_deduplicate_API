@@ -155,3 +155,4 @@ sbert-Training
 test*
 models/
 *models*
+*.drawio
