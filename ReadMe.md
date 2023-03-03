@@ -11,12 +11,9 @@ docker run -d --name clustering-api -p 80:80 entitymatching_api3
 ### You can access the api as below in local
 
 <http://localhost:8000/clusterId/{placeId>}
+http://127.0.0.1:8000/match_score?poi1={placeId1>}&poi2={placeId2>}
 
-<http://localhost:8000/clusterId/1aa4a06b-ec67-45e5-beaf-ca464c3bea2c>
-
-### Api can be accessed as below if running on aws server
-
-<http://172.29.182.110/clusterId/353f339b-7322-4972-b97a-637d0e7f4220>
+http://127.0.0.1:8000/match_score?poi1=4ffce9cf-de12-427b-bb30-09ec95b51ccc&poi2=378cefe4-b784-4def-a803-0f4994e0d879
 
 ### docker notes
 
